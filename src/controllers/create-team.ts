@@ -24,8 +24,7 @@ class CreateTeam {
         }
 
         if (user.role !== "admin") {
-            // throw new AppError("Insufficient permission", 403)
-            return res.status(403).json({message: "Insufficient permission"})
+            throw new AppError("Insufficient permission", 403)
         }
 
         const teamWithSameName = await prisma.team.findFirst({where: {name}})

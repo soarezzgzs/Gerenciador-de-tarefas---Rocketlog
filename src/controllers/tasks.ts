@@ -16,10 +16,14 @@ class Tasks {
 
         const {title, description, teamId, status, priority, assignedTo} = bodySchema.parse(req.body)
 
+        if (req.user.role !== "admin") {
+            throw new AppError("Insufficient permission", 403)
+        }
 
         const team = await prisma.team.findFirst({where: {id: teamId}})
 
         const user = await prisma.user.findFirst({where: {id: assignedTo}})
+
 
         if (!user) {
             throw new AppError("User not found", 404)
@@ -29,7 +33,9 @@ class Tasks {
             throw new AppError("Team not found", 404)
         }
 
-        const task = await prisma.task.create({data: {title, description, teamId, status, priority, assignedTo}})
+        const task = await prisma.task.create({
+            data: {title, description, teamId, status, priority, assignedTo}
+        })
 
         return res.status(201).json({task})
 
@@ -43,6 +49,9 @@ class Tasks {
 
     const { priority, status } = querySchema.parse(req.query)
 
+    const userId = req.user.id
+    const role = req.user.role
+
     const filters: any = {}
 
     if (priority) {
@@ -54,7 +63,7 @@ class Tasks {
     }
 
     const tasks = await prisma.task.findMany({
-        where: filters
+        where: role === "admin" ? { ...filters } : { assignedTo: userId, ...filters },
     })
 
     return res.status(200).json({ tasks })
@@ -78,21 +87,26 @@ class Tasks {
 
         const {title, description, teamId, status, priority, assignedTo} = bodySchema.parse(req.body)
 
-        const task = await prisma.task.update({where: {id}, data: {title, description, teamId, status, priority, assignedTo}})
+        const userId = req.user.id
+        const role = req.user.role
+
+        const task = await prisma.task.findFirst({where: {id}})
 
         if(!task) {
             throw new AppError("Task not found", 404)
         }
 
-        if(!teamId) {
-            throw new AppError("Team not found", 404)
+        if(!title && !description && !teamId && !status && !priority && !assignedTo) {
+            throw new AppError("Task name or description is necessary", 404)
         }
 
-        if(!assignedTo) {
-            throw new AppError("User not found", 404)
+        if( role !== "admin" && task.assignedTo !== userId) {
+            throw new AppError("Insufficient permission", 403)
         }
 
-        return res.status(200).json()
+        const updatedTask = await prisma.task.update({where: {id}, data: req.body})
+
+        return res.status(200).json(updatedTask)
     }
 
     async delete (req: Request, res: Response){
@@ -101,14 +115,26 @@ class Tasks {
         })
 
         const {id} = paramSchema.parse(req.params)
+        
+        const task = await prisma.task.findFirst({where: {id}})
+        const userId = req.user.id
+        const role = req.user.role
 
         if(!id) {
             throw new AppError("Task not found", 404)
         }
 
-        const task = await prisma.task.delete({where: {id}})
+        if (!task) {
+            throw new AppError("Task not found", 404)
+        }
 
-        return res.status(200).json()
+        if (role !== "admin" && task.assignedTo !== userId) {
+            throw new AppError("Insufficient permission", 403)
+        }
+
+        const taskVerified = await prisma.task.delete({where: {id}})
+
+        return res.status(200).json(taskVerified)
     }
 }
 
