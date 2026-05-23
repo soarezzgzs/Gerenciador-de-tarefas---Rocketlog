@@ -69,45 +69,60 @@ class Tasks {
     return res.status(200).json({ tasks })
 }
 
-    async update (req: Request, res: Response) {
-        const paramSchema = z.object({
-            id: z.string().uuid()
-        })
+    async update(req: Request, res: Response) {
+    const paramSchema = z.object({
+        id: z.string().uuid()
+    })
 
-        const bodySchema = z.object({
-            title: z.string().trim().min(3),
-            description: z.string().trim().min(3),
-            teamId: z.string().uuid(),
-            status: z.enum(["pending", "in_progress", "completed"]).default("pending"),
-            priority: z.enum(["high", "medium", "low"]).default("medium"),
-            assignedTo: z.string().uuid()
-        }).partial()
+    const bodySchema = z.object({
+        title: z.string().trim().min(3),
+        description: z.string().trim().min(3),
+        teamId: z.string().uuid(),
+        status: z.enum(["pending", "in_progress", "completed"]),
+        priority: z.enum(["high", "medium", "low"]),
+        assignedTo: z.string().uuid()
+    }).partial()
 
-        const {id} = paramSchema.parse(req.params)
+    const { id } = paramSchema.parse(req.params)
+    const data = bodySchema.parse(req.body)
 
-        const {title, description, teamId, status, priority, assignedTo} = bodySchema.parse(req.body)
+    const userId = req.user.id
+    const role = req.user.role
 
-        const userId = req.user.id
-        const role = req.user.role
+    const task = await prisma.task.findUnique({
+        where: { id }
+    })
 
-        const task = await prisma.task.findFirst({where: {id}})
-
-        if(!task) {
-            throw new AppError("Task not found", 404)
-        }
-
-        if(!title && !description && !teamId && !status && !priority && !assignedTo) {
-            throw new AppError("Task name or description is necessary", 404)
-        }
-
-        if( role !== "admin" && task.assignedTo !== userId) {
-            throw new AppError("Insufficient permission", 403)
-        }
-
-        const updatedTask = await prisma.task.update({where: {id}, data: req.body})
-
-        return res.status(200).json(updatedTask)
+    if (!task) {
+        throw new AppError("Task not found", 404)
     }
+
+    if (Object.keys(data).length === 0) {
+        throw new AppError("At least one field must be provided")
+    }
+
+    if (role !== "admin" && task.assignedTo !== userId) {
+        throw new AppError("Insufficient permission", 403)
+    }
+
+    const updatedTask = await prisma.task.update({
+        where: { id },
+        data
+    })
+
+    if (data.status && data.status !== task.status) {
+        await prisma.taskHistory.create({
+            data: {
+                taskId: id,
+                changedById: userId,
+                oldStatus: task.status,
+                newStatus: data.status
+            }
+        })
+    }
+
+    return res.status(200).json(updatedTask)
+}
 
     async delete (req: Request, res: Response){
         const paramSchema = z.object({
