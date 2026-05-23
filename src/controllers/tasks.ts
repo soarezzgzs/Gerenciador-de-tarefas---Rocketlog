@@ -36,14 +36,29 @@ class Tasks {
     }
 
     async index(req: Request, res: Response) {
-        const tasks = await prisma.task.findMany()
+    const querySchema = z.object({
+        priority: z.enum(["high", "medium", "low"]).optional(),
+        status: z.enum(["pending", "in_progress", "completed"]).optional()
+    })
 
-        if (!tasks) {
-            throw new AppError("No have any tasks.", 404)
-        }
+    const { priority, status } = querySchema.parse(req.query)
 
-        return res.status(200).json({tasks})
+    const filters: any = {}
+
+    if (priority) {
+        filters.priority = priority
     }
+
+    if (status) {
+        filters.status = status
+    }
+
+    const tasks = await prisma.task.findMany({
+        where: filters
+    })
+
+    return res.status(200).json({ tasks })
+}
 
     async update (req: Request, res: Response) {
         const paramSchema = z.object({
