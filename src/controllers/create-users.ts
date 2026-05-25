@@ -9,10 +9,11 @@ class CreateUserController {
         const bodySchema = z.object({
             name: z.string().trim().min(3).max(50),
             email: z.string().email().trim().max(100),
-            password: z.string().min(6).max(100)
+            password: z.string().min(6).max(100),
+            role: z.enum(["admin", "member"]).default("member").optional()
         })
 
-        const {name, email, password} = bodySchema.parse(req.body)
+        const {name, email, password, role} = bodySchema.parse(req.body)
 
         const userWithSameEmail = await prisma.user.findUnique({where: {email}})
 
@@ -38,7 +39,8 @@ class CreateUserController {
             data: {
                 name,
                 email,
-                password: hashedPassword
+                password: hashedPassword,
+                role
             }
         })
 

@@ -7,16 +7,21 @@ class CreateTeam {
     async create(req: Request, res: Response) {
         const bodySchema = z.object({
             name: z.string().trim().min(3).max(50),
-            description: z.string().trim().min(3).max(100),
-            userId: z.string().uuid()
+            description: z.string().trim().min(3).max(100)
         })
 
-        const {name, description, userId} = bodySchema.parse(req.body)
+        const {name, description} = bodySchema.parse(req.body)
 
+        if (!req.user?.id) {
+            throw new AppError("User not authenticated", 404)
+        }
+        
+        const userId = req.user?.id
+        
         if (!userId) {
             throw new AppError("User not found", 404)
         }
-
+        
         const user = await prisma.user.findUnique({where: {id: userId}})
 
         if (!user) {
@@ -37,6 +42,8 @@ class CreateTeam {
             throw new AppError("Team description is necessary.", 404)
         }
 
+
+        console.log(req.user)
 
         const team = await prisma.team.create({
             data: {

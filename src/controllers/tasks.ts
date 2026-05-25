@@ -11,7 +11,7 @@ class Tasks {
             teamId: z.string().uuid(),
             status: z.enum(["pending", "in_progress", "completed"]).default("pending"),
             priority: z.enum(["high", "medium", "low"]).default("medium"),
-            assignedTo: z.string().uuid()
+            assignedTo: z.string().uuid().optional()
         })
 
         const {title, description, teamId, status, priority, assignedTo} = bodySchema.parse(req.body)
@@ -33,9 +33,20 @@ class Tasks {
             throw new AppError("Team not found", 404)
         }
 
+        console.log(req.user)
+
         const task = await prisma.task.create({
-            data: {title, description, teamId, status, priority, assignedTo}
+            data: {
+                title, 
+                description, 
+                teamId, 
+                status, 
+                priority, 
+                assignedTo: assignedTo ?? req.user.id
+            }
         })
+
+
 
         return res.status(201).json({task})
 

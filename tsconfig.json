@@ -9,10 +9,12 @@
         "./src/*"
       ]
     },
+    "isolatedModules": true,
     "module": "node16",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": ["node", "jest"]
   }
 }

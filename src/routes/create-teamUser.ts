@@ -2,7 +2,6 @@ import {Router} from "express"
 import {CreateTeamUser} from "../controllers/team-user"
 import {verifyUserAuthorization} from "../middlewares/verifyUserAuthorization"
 import {ensureAuthenticated} from "../middlewares/ensureAuthenticated"
-import {ListTeamUser} from "../controllers/list-teamUser"
 
 const TeamUserRoutes = Router()
 
