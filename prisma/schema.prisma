@@ -95,7 +95,7 @@ model Task {
 model TaskHistory {
   id String @id @default(uuid())
 
-  task   Task @relation(fields: [taskId], references: [id])
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
   taskId String  @map("task_id")
 
   changedBy   User @relation(fields: [changedById], references: [id])

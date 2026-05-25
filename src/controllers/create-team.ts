@@ -6,9 +6,9 @@ import {z} from "zod"
 class CreateTeam {
     async create(req: Request, res: Response) {
         const bodySchema = z.object({
-            name: z.string().trim().min(3),
-            description: z.string().trim().min(3),
-            userId: z.string()
+            name: z.string().trim().min(3).max(50),
+            description: z.string().trim().min(3).max(100),
+            userId: z.string().uuid()
         })
 
         const {name, description, userId} = bodySchema.parse(req.body)
@@ -107,8 +107,13 @@ class CreateTeam {
             throw new AppError("Team not found", 404)
         }
 
+        const team = await prisma.team.findUnique({where: {id}})
 
-        const team = await prisma.team.delete({
+        if (!team) {
+            throw new AppError("Team not found", 404)
+        }
+
+        const teamDeleted = await prisma.team.delete({
             where: {
                 id
             }

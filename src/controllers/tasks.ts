@@ -6,8 +6,8 @@ import {z} from "zod"
 class Tasks {
     async create (req: Request, res: Response) {
         const bodySchema = z.object({
-            title: z.string().trim().min(3),
-            description: z.string().trim().min(3),
+            title: z.string().trim().min(3).max(100),
+            description: z.string().trim().min(3).max(200),
             teamId: z.string().uuid(),
             status: z.enum(["pending", "in_progress", "completed"]).default("pending"),
             priority: z.enum(["high", "medium", "low"]).default("medium"),
@@ -75,12 +75,12 @@ class Tasks {
     })
 
     const bodySchema = z.object({
-        title: z.string().trim().min(3),
-        description: z.string().trim().min(3),
+        title: z.string().trim().min(3).max(100),
+        description: z.string().trim().min(3).max(200),
         teamId: z.string().uuid(),
         status: z.enum(["pending", "in_progress", "completed"]),
         priority: z.enum(["high", "medium", "low"]),
-        assignedTo: z.string().uuid()
+        assignedTo: z.string().uuid().optional()
     }).partial()
 
     const { id } = paramSchema.parse(req.params)
@@ -88,6 +88,12 @@ class Tasks {
 
     const userId = req.user.id
     const role = req.user.role
+
+    const team = await prisma.team.findFirst({ where: { id: data.teamId } })
+
+    if (data.teamId && !team) {
+        throw new AppError("Team not found", 404)
+    }
 
     const task = await prisma.task.findUnique({
         where: { id }
@@ -147,7 +153,13 @@ class Tasks {
             throw new AppError("Insufficient permission", 403)
         }
 
+        // await prisma.taskHistory.deleteMany({where: {taskId: id}})
+
         const taskVerified = await prisma.task.delete({where: {id}})
+
+        if (!taskVerified) {
+            throw new AppError("Task not found", 404)
+        }
 
         return res.status(200).json(taskVerified)
     }

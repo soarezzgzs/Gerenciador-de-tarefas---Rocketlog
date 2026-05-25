@@ -7,9 +7,9 @@ import {hash} from "bcrypt";
 class CreateUserController {
     async create (req: Request, res: Response) {
         const bodySchema = z.object({
-            name: z.string().trim().min(3),
-            email: z.string().email(),
-            password: z.string().min(6)
+            name: z.string().trim().min(3).max(50),
+            email: z.string().email().trim().max(100),
+            password: z.string().min(6).max(100)
         })
 
         const {name, email, password} = bodySchema.parse(req.body)
@@ -20,7 +20,19 @@ class CreateUserController {
             throw new AppError("Email already exists", 409)
         }
 
+        if (!password) {
+            throw new AppError("Password is necessary", 400)
+        }
+
         const hashedPassword = await hash(password, 8)
+
+        if (!hashedPassword) {
+            throw new AppError("Password not hashed", 500)
+        }
+
+        if (!name || !email || !password) {
+            throw new AppError("All fields are necessary", 400)
+        }
 
         const user = await prisma.user.create({
             data: {

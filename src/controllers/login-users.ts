@@ -20,8 +20,8 @@ export const authConfig: {
 class LoginUsers {
   async create(req: Request, res: Response) {
     const bodySchema = z.object({
-      email: z.string().email(),
-      password: z.string().min(6)
+      email: z.string().email().trim().max(100),
+      password: z.string().min(6).max(100)
     })
 
     const { email, password } = bodySchema.parse(req.body)
