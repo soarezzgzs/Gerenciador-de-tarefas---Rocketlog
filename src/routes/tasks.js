@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.taskRoutes = void 0;
+const express_1 = require("express");
+const tasks_1 = require("../controllers/tasks");
+const ensureAuthenticated_1 = require("../middlewares/ensureAuthenticated");
+const verifyUserAuthorization_1 = require("../middlewares/verifyUserAuthorization");
+const taskRoutes = (0, express_1.Router)();
+exports.taskRoutes = taskRoutes;
+const tasks = new tasks_1.Tasks();
+taskRoutes.use(ensureAuthenticated_1.ensureAuthenticated);
+taskRoutes.post("/", (0, verifyUserAuthorization_1.verifyUserAuthorization)(["admin"]), tasks.create);
+taskRoutes.get("/", tasks.index);
+taskRoutes.patch("/:id", tasks.update);
+taskRoutes.delete("/:id", tasks.delete);

@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.showLogRoutes = void 0;
+const express_1 = require("express");
+const show_log_1 = require("../controllers/show-log");
+const ensureAuthenticated_1 = require("../middlewares/ensureAuthenticated");
+const verifyUserAuthorization_1 = require("../middlewares/verifyUserAuthorization");
+const showLogRoutes = (0, express_1.Router)();
+exports.showLogRoutes = showLogRoutes;
+const showLog = new show_log_1.ShowLog();
+showLogRoutes.use(ensureAuthenticated_1.ensureAuthenticated, (0, verifyUserAuthorization_1.verifyUserAuthorization)(["admin"]));
+showLogRoutes.get("/", showLog.index);

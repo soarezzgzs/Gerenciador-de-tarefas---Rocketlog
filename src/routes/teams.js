@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.teamRoutes = void 0;
+const express_1 = require("express");
+const create_team_1 = require("../controllers/create-team");
+const ensureAuthenticated_1 = require("../middlewares/ensureAuthenticated");
+const verifyUserAuthorization_1 = require("../middlewares/verifyUserAuthorization");
+const teamRoutes = (0, express_1.Router)();
+exports.teamRoutes = teamRoutes;
+const createTeam = new create_team_1.CreateTeam();
+teamRoutes.use(ensureAuthenticated_1.ensureAuthenticated, (0, verifyUserAuthorization_1.verifyUserAuthorization)(["admin"]));
+teamRoutes.post("/", createTeam.create);
+teamRoutes.get("/", createTeam.index);
+teamRoutes.patch("/:id", createTeam.patch);
+teamRoutes.delete("/:id", createTeam.delete);
